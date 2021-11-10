@@ -1,0 +1,12 @@
+/**
+ * 项目名称
+ */
+rootProject.name = 'study-gradle'
+
+/**
+ * 引入子模块名称
+ * 注：多个模块也可用“,”分割。例如：include 'gradle-api', 'gradle-service', 'gradle-web'
+ */
+include 'gradle-api'
+include 'gradle-service'
+include 'gradle-web'

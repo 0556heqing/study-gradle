@@ -1,0 +1,78 @@
+/**
+ * 添加构建插件：apply plugin
+ * 插件也可使用：plugins { id 'java' }
+ */
+apply plugin: 'java'
+
+ext {
+    projectConfig = ['groupId': 'com.heqing.gradle', 'version': '1.0-SNAPSHOT']
+    mavenConfig = ['userName': '***', 'passWord': '***']
+}
+
+/**
+ * 定义共同的行为
+ * allprojects: 对所有project的配置，包括Root Project
+ */
+allprojects {
+    group = projectConfig.groupId
+    version = projectConfig.version
+
+    // 指定编译编译.java文件的jdk版本
+    sourceCompatibility = 1.8
+    // 确保class文件与targetCompatibility指定版本，或者更新的java虚拟机兼容
+    targetCompatibility = 1.8
+    // java编译的时候缺省状态下会因为中文字符而失败
+    [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+    // 编译JAVA文件时采用UTF-8
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+}
+
+/**
+ * 定义子项目共同行为
+ * subprojects: 对所有Child Project的配置
+ */
+subprojects {
+
+    /**
+     * 添加maven插件。gradle 可以使用 nexus 仓库，所以加入maven插件
+     */
+    apply plugin: 'maven'
+
+    /**
+     * 指定仓库
+     * 在Java工程中，依赖是分布的以JAR文件的形式存在，许多库都从仓库里获得，Gradle需要你指定至少一个仓库作为依赖下载的地方。
+     * 将按照你在文件中(build.gradle)仓库的顺序寻找所需依赖(如jar文件)，如果在某个仓库中找到了，那么将不再其它仓库中寻找。
+     */
+    repositories {
+
+        /**
+         * 远程私有Maven仓库（第三方仓库）
+         */
+        maven{url 'http://maven.***.com/nexus/content/groups/public/'}
+
+        /**
+         * 中央仓库: 使用maven中央仓库http://central.maven.org/作为maven仓库的路径
+         */
+        mavenCentral()
+    }
+
+    /**
+     * 上传到远程私有Maven仓库（上传文件到私服仓库）
+     */
+    uploadArchives {
+        repositories.mavenDeployer {
+            repository(url: "http://maven.***.com/nexus/content/repositories/snapshots") {
+                authentication(userName: mavenConfig.userName, password: mavenConfig.passWord)
+            }
+        }
+    }
+}
+
+/**
+ * 定义项目特有的行为
+ */
+project(':gradle-service') {
+    apply plugin: 'java'
+}

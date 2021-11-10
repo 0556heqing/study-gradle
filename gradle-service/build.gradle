@@ -1,0 +1,84 @@
+/**
+ * ext属性是ExtensionAware类型的一个特殊的属性，本质是一个Map类型的变量。
+ * ExtentionAware接口的实现类为Project, Settings, Task, SourceSet等，ExtentionAware可以在运行时扩充属性，
+ * 而这里的ext，就是里面的一个特殊的属性
+ */
+ext {
+    lombok_version = '1.18.12'
+}
+
+/**
+ *  依赖配置。
+ *  dependencies：用来定义依赖列表
+ *  Gradle 中依赖以组的形式来划分不同的配置。每个配置都只是一组指定的依赖。
+ *
+ *  2.x版本依赖的可以看看下面的说明，括号里对应的是3.0版本的依赖方式。
+ *      compile（implementation，api）：这种是我们最常用的方式，使用该方式依赖的库将会参与编译和打包。
+ *      implementation：该依赖方式所依赖的库不会传递，只会在当前module中生效。
+ *      api：该依赖方式会传递所依赖的库，当其他module依赖了该module时，可以使用该module下使用api依赖的库。
+ *      provided（compileOnly）: 只在编译时有效，不会参与打包
+ *      apk（runtimeOnly）：只在生成apk的时候参与打包，编译时不会参与，很少用。:
+ *      testCompile（testImplementation）：只在单元测试代码的编译以及最终测试打包时有效。
+ *      debugCompile（debugImplementation）：只在debug模式的编译和最终的debug打包时有效。
+ *      releaseCompile（releaseImplementation）：仅仅针对Release 模式的编译和最终的Release 打包。
+ *      runtime：依赖在运行和测试系统的时候需要，但在编译的时候不需要。
+ *      testRuntime：测试运行期需要
+ *
+ *  依赖属性。Gradle 从仓库中查找依赖时，需要通过属性的结合来定位，最少需要提供一个name。
+ *      group：组织名。用来标识一个组织、公司或者项目，可以用点号分隔。
+ *      name：项目名。具有唯一属性。一般在组织中的项目。
+ *      version：版本号。一个库可以有很多个版本，通常会包含一个主版本号和次版本号。
+ *      classifier：（不常用）有时候需要另外一个属性来进一步的说明，比如说明运行时的环境。
+ */
+dependencies {
+
+    /**
+     * 定义内部依赖
+     * 注意：依赖方式必须设成compile。否则无法编译子包代码，即 configurations.compile.collect 不生效
+     */
+    compile project (':gradle-api')
+
+    /**
+     * 获取外部依赖：可以用map的形式来注明(注明group、name、version)，也可以直接用冒号来分隔属性。
+     */
+//    implementation (group: 'com.alibaba', name: 'fastjson', version: '1.2.70')
+    implementation ('com.alibaba:fastjson:1.2.70')
+
+    /**
+     * 指定共同属性：项目中多个子模块依赖同一个文件，可以把共同的依赖属性定义成外部属性。定义在ext{}中
+     */
+    compileOnly ('org.projectlombok:lombok:' + lombok_version)
+    /**
+     * 注解处理工具，在代码编译期对源代码进行扫描，找出代码中的注解，根据开发者定义的解析规则生成新的Java文件，新生成的Java文件最终也会生成class文件
+     */
+    annotationProcessor ('org.projectlombok:lombok:' + lombok_version)
+
+    /**
+     * 排除传递依赖：
+     *     exclude：排除依赖只需要声明group和(或)module，Gradle不允许你只排除指定版本的依赖。
+     *     transitive：可以用来排除所有属性
+     */
+    implementation ('org.slf4j:slf4j-log4j12:1.7.30') {
+//        exclude group: 'log4j', module: 'log4j'
+        transitive = false
+    }
+
+    /**
+     * 动态版本声明：使用一个依赖的最新版本，可以使用latest.integration，也可以用一个+号来动态的声明。
+     */
+//    testImplementation (group: 'junit', name: 'junit', version: '4.+')
+    testImplementation('junit:junit:latest.integration')
+
+}
+
+// 将主类头添加到JAR文件的清单中
+jar {
+    manifestContentCharset 'utf-8'
+    metadataCharset 'utf-8'
+    manifest {
+        attributes "Main-Class": "com.heqing.gradle.TestDemo"
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
